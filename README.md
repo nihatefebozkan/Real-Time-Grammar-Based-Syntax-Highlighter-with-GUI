@@ -43,7 +43,8 @@ Bu proje, gerçek zamanlı olarak kod vurgulama yapan, dilbilgisi tabanlı bir s
 4. Desteklenen diller listesinden bir programlama dili seçerek vurgulama şablonunu değiştirin.
 
 ## Ekran Görüntüleri
-
+<img src= "https://github.com/nihatefebozkan/Real-Time-Grammar-Based-Syntax-Highlighter-with-GUI/blob/main/pdproje2/screenshoot1.png">
+<img src= "https://github.com/nihatefebozkan/Real-Time-Grammar-Based-Syntax-Highlighter-with-GUI/blob/main/pdproje2/screenshoot2.png">
 
 ## Katkıda Bulunma
 
