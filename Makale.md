@@ -30,3 +30,24 @@ Karakter Sabitleri: Tek tırnak içindeki karakterler (örn. 'a', 'x')<br>
 Yorumlar: # ile başlayan satır içi açıklamalar<br>
 
 Sistem, kullanıcı girdisini anlık olarak işler, token’lara ayırır, gramer kurallarına göre doğrular ve GUI’de renklendirilmiş token’larla birlikte hata mesajlarını gösterir. Bu modüler yapı, sistemin hem bakımını hem de gelecekteki geliştirmelerini kolaylaştırır.
+
+
+<h2>3. Sözcüksel Çözümleyici (Lexical Analyzer)</h2>
+
+Sözcüksel çözümleyici, lexer.py dosyasındaki tokenize fonksiyonu ile uygulanmıştır. Bu fonksiyon, giriş kodunu karakter karakter tarayarak token’lara ayırır ve her token’ı uygun bir kategoriyle etiketler. Sözcüksel analiz, durum diyagramı (state diagram) yaklaşımına dayanır ve düzenli ifadeler yerine programlama tabanlı bir yöntem kullanır. Bu yaklaşım, sistemin taşınabilirliğini ve anlaşılırlığını artırır.
+
+<h3>3.1 Token Sınıflandırma </h3>
+
+classify fonksiyonu, kelimeleri aşağıdaki kurallara göre sınıflandırır:
+
+Anahtar Kelimeler: if, else, print, int, char, elif için KEYWORD etiketi.
+
+Sayılar: Sayısal değerler için NUMBER etiketi (örn. 123).
+
+Değişken Tanımlayıcıları: int veya char anahtar kelimelerinden sonra gelen tanımlayıcılar için sırasıyla INT_VAR veya CHAR_VAR etiketi.
+
+Genel Tanımlayıcılar: Daha önce tanımlanmamış değişken isimleri için ID etiketi.
+
+Karakter Sabitleri: Tek tırnak içindeki karakterler için CHAR_LITERAL etiketi (örn. 'a').
+
+Yorumlar: # ile başlayan satırlar için COMMENT etiketi.
