@@ -87,16 +87,51 @@ Lexer geliştirilirken, çok karakterli operatörlerin (`==`, `!=`) doğru şeki
 
 ## 4. Sözdizimsel Çözümleyici (Syntax Analyzer)
 
-Sözdizimsel çözümleyici, `parser.py` dosyasındaki `Parser` sınıfı ile uygulanmıştır. Bu sınıf, Backus-Naur Form (BNF) ile tanımlanmış bir gramer yapısına göre token akışını analiz eder. Sistem, recursive descent (top-down) parsing yöntemini kullanır ve aşağıdaki yapıları destekler:
+Sözdizimsel çözümleyici, `parser.py` dosyasındaki `Parser` sınıfı ile uygulanmıştır. Bu sınıf, Backus-Naur Form (BNF) ile tanımlanmış bir gramer yapısına göre token akışını analiz eder ve recursive descent (top-down) parsing yöntemini kullanır. Sistem, değişken tanımlamaları (`int x`, `char temp`), atama ifadeleri (`x = 5`, `temp = 'a'`), koşullu ifadeler (`if`, `else`), ve `print` ifadeleri gibi yapıları destekler. Özellikle, `char` veri türü ve kullanıcı tanımlı değişkenler (örn. `temp`) için ifade ayrıştırma hiyerarşisi (`parse_expr`, `parse_term`, `parse_factor`) dikkatlice tasarlanmıştır. Aşağıda, parser’ın yapısı, BNF gramer tanımı, ifade ayrıştırma süreci ve hata tespiti ayrıntılı bir şekilde açıklanmaktadır.
 
-- Değişken tanımlamaları: `int x`, `char c`
-- Atama ifadeleri: `x = 5`, `c = 'a'`
-- Koşullu ifadeler: `if (x == 5):`, `else:`
-- `print` ifadeleri: `print('a')`
+### 4.1 BNF Gramer Tanımı
 
-### 4.1 Parser Yapısı
+Sistem, aşağıdaki BNF gramerine göre çalışır. Bu gramer, desteklenen programlama yapılarını tanımlar:
 
-`Parser` sınıfı, token’ları sırayla işler ve her bir token’ın gramer kurallarına uygunluğunu kontrol eder. Hatalar, `errors` listesinde toplanır ve parse işlemi sonunda raporlanır. Örneğin, `parse_if_stmt` fonksiyonu, `if-else` yapılarının doğruluğunu kontrol eder:
+```bnf
+<program> ::= <statement_list>
+<statement_list> ::= <statement> | <statement> <statement_list> | ε
+<statement> ::= <var_decl> | <assign_stmt> | <if_stmt> | <print_stmt>
+<var_decl> ::= ("int" | "char") <identifier>
+<identifier> ::= <ID> | <INT_VAR> | <CHAR_VAR>
+<assign_stmt> ::= <identifier> "=" <expr>
+<if_stmt> ::= "if" "(" <expr> ")" ":" <statement> ["else" ":" <statement>]
+<print_stmt> ::= "print" "(" <expr> ")"
+<expr> ::= <term> { ("+" | "-" | "==" | "!=" | ">" | "<") <term> }
+<term> ::= <factor> { ("*" | "/") <factor> }
+<factor> ::= <NUMBER> | <identifier> | <CHAR_LITERAL> | "(" <expr> ")"
+```
+
+**Açıklama**:
+- `<program>`: Bir veya daha fazla ifadeden oluşan program.
+- `<statement_list>`: Sıfır veya daha fazla ifade (boş program da geçerli, `ε` ile temsil edilir).
+- `<var_decl>`: `int` veya `char` ile değişken tanımlama (örn. `int x`, `char temp`).
+- `<assign_stmt>`: Değişkene değer atama (örn. `x = 5`, `temp = 'a'`).
+- `<if_stmt>`: Koşullu ifade, isteğe bağlı `else` ile (örn. `if (x == 5): print('a') else: print(2)`).
+- `<print_stmt>`: Yazdırma ifadesi (örn. `print('a')`).
+- `<expr>`: Düşük öncelikli operatörlerle (`+`, `-`, `==`, `!=`, `>`, `<`) ifadeler.
+- `<term>`: Yüksek öncelikli operatörlerle (`*`, `/`) ifadeler.
+- `<factor>`: Sayılar, tanımlayıcılar, karakter sabitleri veya parantezli ifadeler.
+
+Bu gramer, `char temp; temp = 'a'` gibi ifadelerin doğru ayrıştırılmasını sağlar. Örneğin, `temp` bir `CHAR_VAR` olarak tanımlanır ve `'a'` bir `CHAR_LITERAL` olarak işlenir.
+
+### 4.2 Parser Yapısı
+
+`Parser` sınıfı, token’ları sırayla işler ve gramer kurallarına uygunluğunu kontrol eder. Temel fonksiyonlar şunlardır:
+
+- **`parse_program`**: Programın tamamını analiz eder, birden fazla ifadeyi ardışık olarak işler.
+- **`parse_statement`**: Değişken tanımlama, atama, `if-else`, veya `print` gibi tek bir ifadeyi ayrıştırır.
+- **`parse_if_stmt`**: Koşullu ifadeleri kontrol eder.
+- **`parse_assign_stmt`**: Atama ifadeleri için doğrulama yapar.
+- **`parse_print_stmt`**: `print` komutlarını işler.
+- **`parse_expr`**, **`parse_term`**, **`parse_factor`**: Matematiksel ve mantıksal ifadeleri hiyerarşik olarak ayrıştırır.
+
+Aşağıdaki kod, `if` ifadelerinin ayrıştırılmasını gösterir:
 
 ```python
 def parse_if_stmt(self):
@@ -122,24 +157,81 @@ def parse_if_stmt(self):
     return True
 ```
 
-Bu fonksiyon, `if` anahtar kelimesini, parantezleri, ifadeleri, iki noktayı ve ardından gelen ifadeleri kontrol eder. `else` ifadesinin yalnızca bir `if` ifadesinden sonra gelebileceği de doğrulanır.
+Bu fonksiyon, `if` anahtar kelimesini, parantezleri, ifadeleri, iki noktayı ve ardından gelen ifadeleri kontrol eder. `else` ifadesinin yalnızca bir `if`’ten sonra gelebileceği doğrulanır.
 
-### 4.2 Hata Tespiti
+### 4.3 İfade Ayrıştırma ve `char` Desteği
 
-Parser, hatalı yapıları algılar ve uygun hata mesajları üretir. Örneğin, bir `else` ifadesi `if` olmadan kullanıldığında, “Invalid statement start” hatası üretilir. `parser_test.py` dosyasındaki testler, aşağıdaki senaryoları kontrol eder:
+İfadelerin doğru ayrıştırılması, özellikle `char` veri türü ve kullanıcı tanımlı değişkenler (örn. `temp`) için kritik öneme sahiptir. `parse_expr`, `parse_term` ve `parse_factor` fonksiyonları, operatör önceliğini dikkate alarak ifadeleri hiyerarşik olarak işler:
 
-- Değişken tanımlamaları: `int x`
-- Atama ifadeleri: `x = 5`
-- Koşullu ifadeler: `if (x == 5): print('a') else: print(2)`
-- Geçersiz `else` ifadeleri: `else: print(5)`
-- Boş programlar
+- **`parse_expr`**: Toplama, çıkarma ve karşılaştırma operatörlerini (`+`, `-`, `==`, `!=`, `>`, `<`) işler.
+- **`parse_term`**: Çarpma ve bölme gibi yüksek öncelikli operatörleri (`*`, `/`) ayrıştırır.
+- **`parse_factor`**: En temel birimleri (sayılar, değişkenler, karakter sabitleri, parantezli ifadeler) işler.
 
-Tüm testler başarılı bir şekilde tamamlanmıştır.
+Örneğin, `char temp; temp = 'a'` kodu şu şekilde ayrıştırılır:
 
-### 4.3 Zorluklar ve Çözümler
+1. **Değişken Tanımlama**:
+   - `parse_statement`, `char` anahtar kelimesini algılar ve `parse_var_decl`’ı çağırır.
+   - `parse_var_decl`, `char`’dan sonra gelen `temp`’i `CHAR_VAR` olarak tanımlar:
 
-Parser geliştirilirken, ifadelerin (expressions) doğru şekilde ayrıştırılması bir zorluk olarak ortaya çıkmıştır. Örneğin, `x + 1` gibi ifadelerin doğru şekilde işlenmesi için `parse_expr`, `parse_term` ve `parse_factor` fonksiyonları hiyerarşik olarak tasarlanmıştır. Bu, operatör önceliğini (örneğin, `*` ve `/` için `+` ve `-`’den daha yüksek öncelik) doğru şekilde ele almayı sağlamıştır. Ayrıca, hata mesajlarının kullanıcı dostu olması için ayrıntılı hata raporlama mekanizmaları geliştirilmiştir.
+```python
+def parse_var_decl(self):
+    token = self.current_token()
+    if token[0] == "KEYWORD" and token[1] in ["int", "char"]:
+        self.advance()
+        token = self.current_token()
+        if token[0] in ["ID", "INT_VAR", "CHAR_VAR"]:
+            self.advance()
+            return True
+        self.errors.append(f"Expected ID, INT_VAR, or CHAR_VAR after variable declaration, got {token} at position {self.pos}")
+        return False
+    return False
+```
 
+2. **Atama İfadesi**:
+   - `parse_assign_stmt`, `temp`’in `CHAR_VAR` olduğunu doğrular ve `=` operatöründen sonra `parse_expr`’i çağırır.
+   - `parse_expr`, `parse_term`’i çağırır; bu da `parse_factor`’ı tetikler.
+   - `parse_factor`, `'a'` gibi bir `CHAR_LITERAL`’ı algılar:
+
+```python
+def parse_factor(self):
+    token = self.current_token()
+    if token[0] in ["NUMBER", "ID", "CHAR_VAR", "INT_VAR", "CHAR_LITERAL"]:
+        self.advance()
+        return True
+    elif token[0] == "SYMBOL" and token[1] == "(":
+        self.advance()
+        if not self.parse_expr():
+            return False
+        if not self.expect("SYMBOL", ")"):
+            return False
+        return True
+    self.errors.append(f"Invalid factor: {token} at position {self.pos}")
+    return False
+```
+
+Bu yapı, `temp = 'a'` gibi ifadelerin doğru şekilde işlenmesini sağlar. `char` türü değişkenler için `CHAR_VAR` ve `CHAR_LITERAL` token’ları, lexer tarafından doğru şekilde etiketlendiği için parser bu bilgileri kullanır.
+
+### 4.4 Hata Tespiti
+
+Parser, hatalı yapıları tespit eder ve kullanıcı dostu hata mesajları üretir. Örneğin:
+
+- **Geçersiz `else`**: `else: print(5)` gibi bir ifade, `if` olmadan kullanıldığında “Invalid statement start” hatası üretir.
+- **Eksik Sembol**: `if (x == 5)` yazıldığında eksik `:` sembolü için “Expected SYMBOL :, got ...” hatası verilir.
+- **Geçersiz İfade**: `temp = 5` gibi bir atama, `temp` bir `CHAR_VAR` ise hata üretmez, ancak lexer’ın `CHAR_VAR`’a yalnızca `CHAR_LITERAL` atamasına izin veren kısıtlamaları dikkate alınmalıdır.
+
+`parser_test.py`’daki testler, bu senaryoları doğrular:
+
+```python
+def test_parse_char_literal():
+    tokens = lexer.tokenize("char temp\n temp = 'a'")
+    parser = Parser(tokens)
+    valid, errors = parser.parse_program()
+    assert valid, f"Expected valid syntax, got errors: {errors}"
+```
+
+### 4.5 Zorluklar ve Çözümler
+
+Sözdizimsel analizde karşılaşılan başlıca zorluk, ifadelerin operatör önceliğine uygun ayrıştırılmasıydı. Örneğin, `x + 1 * 2` gibi bir ifade, `*`’nın daha yüksek önceliği nedeniyle doğru şekilde işlenmelidir. Bu, `parse_term` ve `parse_factor` fonksiyonlarının hiyerarşik tasarımıyla çözüldü. `char` türü değişkenlerin yalnızca `CHAR_LITERAL` (örn. `'a'`) kabul etmesi için lexer ve parser arasında sıkı bir koordinasyon sağlandı. `temp` gibi kullanıcı tanımlı değişken isimlerinin doğru şekilde `CHAR_VAR` veya `INT_VAR` olarak etiketlenmesi, lexer’daki `typed_ids` sözlüğü ile çözüldü ve parser bu bilgileri doğrudan kullandı. Ayrıca, hata mesajlarının net ve kullanıcı dostu olması için `errors` listesine ayrıntılı açıklamalar eklendi.
 ## 5. Grafik Kullanıcı Arayüzü (GUI)
 
 Grafik arayüz, `highlighter_gui.py` dosyasındaki `SyntaxHighlighter` sınıfı ile uygulanmıştır. Tkinter kütüphanesi kullanılarak geliştirilen arayüz, bir metin giriş alanı ve bir durum çubuğu içerir. Her tuş vuruşunda `highlight` fonksiyonu tetiklenir ve kodu token’lara ayırarak uygun renklerle görselleştirir.
