@@ -46,17 +46,6 @@ Bu proje, gerçek zamanlı olarak kod vurgulama yapan, dilbilgisi tabanlı bir s
 <img src= "https://github.com/nihatefebozkan/Real-Time-Grammar-Based-Syntax-Highlighter-with-GUI/blob/main/pdproje2/screenshoot1.png">
 <img src= "https://github.com/nihatefebozkan/Real-Time-Grammar-Based-Syntax-Highlighter-with-GUI/blob/main/pdproje2/screenshoot2.png">
 
-## Katkıda Bulunma
-
-Katkılarınızı memnuniyetle karşılıyoruz! Proje geliştirilmesine yardımcı olmak için şu adımları izleyin:
-1. Depoyu forklayın.
-2. Yeni bir özellik dalı oluşturun: `git checkout -b ozellik/ozellik-adi`
-3. Değişikliklerinizi yapın ve commit edin: `git commit -m "Özellik açıklaması"`
-4. Dalınızı ana depoya itin: `git push origin ozellik/ozellik-adi`
-5. Bir Pull Request oluşturun.
-
-Lütfen katkılarınızın [davranış kuralları](#) ve [katkı kılavuzu](#) ile uyumlu olduğundan emin olun.
-
 
 ## İletişim
 
