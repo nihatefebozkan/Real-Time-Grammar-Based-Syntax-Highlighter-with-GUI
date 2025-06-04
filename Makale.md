@@ -49,3 +49,21 @@ Sözcüksel çözümleyici, `lexer.py` dosyasındaki `tokenize` fonksiyonu ile u
 - **Genel Tanımlayıcılar**: Daha önce tanımlanmamış değişken isimleri için `ID` etiketi.
 - **Karakter Sabitleri**: Tek tırnak içindeki karakterler için `CHAR_LITERAL` etiketi (örn. `'a'`).
 - **Yorumlar**: `#` ile başlayan satırlar için `COMMENT` etiketi.
+
+Aşağıdaki kod parçası, `classify` fonksiyonunun temel yapısını gösterir:
+```python
+def classify(word, prev_keyword=None, typed_ids=None):
+    keywords = ["if", "print", "else", "elif", "int", "char"]
+    if word in keywords:
+        return ("KEYWORD", word)
+    elif is_number(word):
+        return ("NUMBER", word)
+    elif prev_keyword == "int":
+        typed_ids[word] = "INT_VAR"
+        return ("INT_VAR", word)
+    elif prev_keyword == "char":
+        typed_ids[word] = "CHAR_VAR"
+        return ("CHAR_VAR", word)
+    else:
+        return (typed_ids.get(word, "ID"), word)
+```
