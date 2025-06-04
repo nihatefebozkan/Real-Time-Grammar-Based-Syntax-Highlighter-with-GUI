@@ -67,3 +67,22 @@ def classify(word, prev_keyword=None, typed_ids=None):
     else:
         return (typed_ids.get(word, "ID"), word)
 ```
+
+### 3.2 Tokenizasyon Süreci
+
+`tokenize` fonksiyonu, giriş kodunu tararken çok karakterli operatörler (`==`, `!=`), semboller (`(`, `)`, `:`), sayılar, karakter sabitleri ve yorumları doğru şekilde algılar. Örneğin, bir `#` karakteri tespit edildiğinde, satır sonuna kadar olan metin bir yorum olarak işaretlenir. Boş girişler için boş bir token listesi döndürülür. Lexer, `lexer_test.py` dosyasındaki birim testlerle doğrulanmıştır. Testler, aşağıdaki senaryoları kapsar:
+
+- Basit değişken tanımlamaları: `int x`
+- Atama ifadeleri: `x = 5`
+- Koşullu ifadeler: `if (x + 1):`
+- Yorumlar: `int x  # comment`
+- Karakter sabitleri: `c = 'a'`
+- Boş girişler
+
+Testler, lexer’ın her durumda doğru token’ları ürettiğini doğrulamıştır.
+
+### 3.3 Zorluklar ve Çözümler
+
+Lexer geliştirilirken, çok karakterli operatörlerin (`==`, `!=`) doğru şekilde ayrıştırılması bir zorluk olarak ortaya çıkmıştır. Bu sorun, iki karakterlik bir önizleme mekanizması kullanılarak çözülmüştür. Ayrıca, değişken türlerinin (`INT_VAR`, `CHAR_VAR`) doğru şekilde takip edilmesi için `typed_ids` sözlüğü kullanılmış, böylece değişkenlerin tür bilgisi korunmuştur. Bu, özellikle birden fazla değişken tanımlandığında tür karışıklığını önlemiştir.
+
+
