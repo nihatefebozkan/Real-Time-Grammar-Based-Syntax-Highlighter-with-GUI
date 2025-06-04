@@ -1,5 +1,4 @@
-<h1> Gerçek Zamanlı Sözdizimi Vurgulayıcı Tasarımı ve Uygulaması </h1>
-
+# Gerçek Zamanlı Sözdizimi Vurgulayıcı Tasarımı ve Uygulaması
 <h2> Özet </h2>
 
 Bu makale, Python programlama dili kullanılarak geliştirilen, gramer tabanlı bir gerçek zamanlı sözdizimi vurgulayıcının (syntax highlighter) tasarımını, 
